@@ -17,23 +17,17 @@ class LUNumberTest {
     @Test
     void compareWith() {
         assertEquals("more",
-                new LUNumber("123456789123456789")
-                        .compareWith(new LUNumber("123456789")));
+                new LUNumber("123456789123456789").compareWith(new LUNumber("123456789")));
         assertEquals("more",
-                new LUNumber("2222222222222")
-                .compareWith(new LUNumber("2222222222221")));
+                new LUNumber("2222222222222").compareWith(new LUNumber("2222222222221")));
         assertEquals("less",
-                new LUNumber("123456789")
-                .compareWith(new LUNumber("123456789123456789")));
+                new LUNumber("123456789").compareWith(new LUNumber("123456789123456789")));
         assertEquals("less",
-                new LUNumber("2222222222221")
-                        .compareWith(new LUNumber("2222222222222")));
+                new LUNumber("2222222222221").compareWith(new LUNumber("2222222222222")));
         assertEquals("equal",
-                new LUNumber("123456789123456789")
-                .compareWith(new LUNumber("123456789123456789")));
+                new LUNumber("123456789123456789").compareWith(new LUNumber("123456789123456789")));
         assertEquals("more",
-                new LUNumber("20123456789")
-                        .compareWith(new LUNumber("10123456789")));
+                new LUNumber("20123456789").compareWith(new LUNumber("10123456789")));
 
         int limit = 1000;
         for (int i = 0; i <= limit; i++) {
@@ -64,8 +58,7 @@ class LUNumberTest {
         for (int i = 0; i <= limit; i++) {
             for (int j = 0; j <= limit; j++) {
                 assertEquals(String.valueOf(i + j),
-                        new LUNumber(String.valueOf(i))
-                                .add(new LUNumber(String.valueOf(j))).toString());
+                        new LUNumber(String.valueOf(i)).add(new LUNumber(String.valueOf(j))).toString());
             }
         }
     }
@@ -73,8 +66,7 @@ class LUNumberTest {
     @Test
     void minus() {
         assertEquals("12345678900000000000",
-                new LUNumber("12345678901234567890")
-                        .minus(new LUNumber("1234567890")).toString());
+                new LUNumber("12345678901234567890").minus(new LUNumber("1234567890")).toString());
 
         assertThrows(IllegalArgumentException.class, () -> new LUNumber("123").minus(new LUNumber("1234")));
 
@@ -82,10 +74,22 @@ class LUNumberTest {
         for (int i = 0; i <= limit; i++) {
             for (int j = 0; j <= i; j++) {
                 assertEquals(String.valueOf(i - j),
-                        new LUNumber(String.valueOf(i))
-                                .minus(new LUNumber(String.valueOf(j))).toString());
+                        new LUNumber(String.valueOf(i)).minus(new LUNumber(String.valueOf(j))).toString());
             }
         }
+    }
+
+    @Test
+    void times() {
+        assertEquals("152399025", new LUNumber("12345").times(new LUNumber("12345")).toString());
+        int limit = 1000;
+        for (int i = 0; i <= limit; i++) {
+            for (int j = 0; j <= limit; j++) {
+                assertEquals(String.valueOf(i * j),
+                        new LUNumber(String.valueOf(i)).times(new LUNumber(String.valueOf(j))).toString());
+            }
+        }
+
     }
 
 }
