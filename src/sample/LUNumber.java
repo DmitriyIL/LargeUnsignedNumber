@@ -8,25 +8,32 @@ class LUNumber {
 
     private int length;
 
-    LUNumber(String number) {
-        if (number.isEmpty()) throw new IllegalArgumentException("String in empty");
-        if (number.charAt(0) == '0' && number.length() > 1) throw new IllegalArgumentException("Incorrect number");
-
-        for (int i = 0; i < number.length(); i++) {
-            char charInNumber = number.charAt(i);
-            if (rangeClosed('0', '9').noneMatch((digit) -> digit == charInNumber))
-                throw new IllegalArgumentException("Incorrect number");
-        }
-
-        this.reversedNumber = new StringBuffer(number).reverse().toString();
+    
+    LUNumber(String numberInStr) {
+        validation(numberInStr);
+    
+        this.reversedNumber = reverse(numberInStr);
 
         length = reversedNumber.length();
     }
+
 
     LUNumber(int number) {
         this (String.valueOf(number));
     }
 
+    
+    private void validation(String numberInStr) {
+        if (numberInStr.isEmpty()) throw new IllegalArgumentException("String in empty");
+        if (numberInStr.charAt(0) == '0' && numberInStr.length() > 1) throw new IllegalArgumentException("Incorrect number");
+
+        for (int i = 0; i < numberInStr.length(); i++) {
+            char charInNumber = numberInStr.charAt(i);
+            if (rangeClosed('0', '9').noneMatch((digit) -> digit == charInNumber))
+                throw new IllegalArgumentException("Incorrect number");
+        }
+    }
+    
 
     String compareWith(LUNumber other) {
         if (this.length > other.length) return "more";
@@ -42,88 +49,72 @@ class LUNumber {
 
 
     LUNumber add(LUNumber other) {
-        String sum = new StringBuilder(sum(this.toString(), other.toString()))
-                .reverse()
-                .toString();
+        String sum = reverse(sum(this.reversedNumber, other.reversedNumber));
         return new LUNumber(sum);
     }
 
-    private String sum(String number1, String number2) {
-        int shortestLength = min(number1.length(), number2.length());
-        int longestLength = max(number1.length(), number2.length());
 
-        StringBuilder newNumber = new StringBuilder("");
+    private String sum(String num1, String num2) {
+        int lengthDifference = abs(num1.length() - num2.length());
+        String zeros = new String(new char[lengthDifference]).replace('\0', '0');
+        if (num1.length() > num2.length()) num2 += zeros; else num1 += zeros;
+
+        StringBuilder result = new StringBuilder("");
 
         int remainder = 0;
 
-        for (int i = 0; i < shortestLength; i++) {
-            int digit1 = toInt(number1.charAt(i));
-            int digit2 = toInt(number2.charAt(i));
-            int digitsSum = digit1 + digit2 + remainder;
+        for (int i = 0; i < num1.length(); i++) {
+            int digit1 = toInt(num1.charAt(i));
+            int digit2 = toInt(num2.charAt(i));
+            int interimSum = digit1 + digit2 + remainder;
 
-            int totalDigit = digitsSum % 10;
+            int totalDigit = interimSum % 10;
+            remainder = interimSum / 10;
 
-            newNumber.append(String.valueOf(totalDigit));
-
-            remainder = digitsSum / 10;
+            result.append(String.valueOf(totalDigit));
         }
 
-        for (int i = shortestLength; i < longestLength; i++) {
-            String biggestNum = (number1.length() > number2.length()) ? number1 : number2;
-            int digit1 = toInt(biggestNum.charAt(i));
-            int digitsSum = digit1 + remainder;
+        if (remainder != 0) result.append("1");
 
-            int totalDigit = digitsSum % 10;
-
-            newNumber.append(String.valueOf(totalDigit));
-
-            remainder = digitsSum / 10;
-        }
-
-        if (remainder != 0) newNumber.append("1");
-
-        return newNumber.toString();
+        return result.toString();
     }
+
 
     LUNumber minus(LUNumber other) {
         String comparison = this.compareWith(other);
         if (comparison.equals("less")) throw new IllegalArgumentException("result is negative");
         if (comparison.equals("equal")) return new LUNumber("0");
 
-        StringBuilder newNumber = new StringBuilder("");
+        int lengthDifference = abs(this.length - other.length);
+        String zeros = new String(new char[lengthDifference]).replace('\0', '0');
+        other.reversedNumber += zeros;
+
+        StringBuilder result = new StringBuilder("");
 
         int remainder = 0;
 
-        for (int i = 0; i < other.length; i++) {
+        for (int i = 0; i < this.length; i++) {
             int digitsDifference = this.reversedNumber.charAt(i) - other.reversedNumber.charAt(i) - remainder;
 
-            int digit = (digitsDifference < 0) ? digitsDifference + 10 : digitsDifference;
-
-            newNumber.append(String.valueOf(digit));
-
+            int totalDigit = (digitsDifference < 0) ? digitsDifference + 10 : digitsDifference;
             remainder = (digitsDifference < 0) ? 1 : 0;
+
+            result.append(String.valueOf(totalDigit));
         }
 
-        for (int i = other.length; i < this.length; i++) {
-            int digitsDifference = toInt(this.reversedNumber.charAt(i)) - remainder;
-
-            int digit = (digitsDifference < 0) ? digitsDifference + 10 : digitsDifference;
-
-            newNumber.append(String.valueOf(digit));
-
-            remainder = (digitsDifference < 0) ? 1 : 0;
-        }
-
-        String newNumberInStr = newNumber.reverse().toString();
-        int excessZeros = 0;
-        while (newNumberInStr.charAt(excessZeros) == '0') {
-            excessZeros++;
-        }
-
-        return new LUNumber(newNumberInStr.substring(excessZeros));
+        return new LUNumber(cutZeros(result.toString()));
     }
     
-    
+
+    private String cutZeros(String inputNum) {
+        int excessZeros = 0;
+        while (inputNum.charAt(inputNum.length() - 1 - excessZeros) == '0') {
+            excessZeros++;
+        }
+        return reverse(inputNum.substring(0, inputNum.length() - excessZeros));
+    }
+
+
     LUNumber times(LUNumber other) {
         if ("0".equals(this.toString()) || "0".equals(other.toString())) return new LUNumber("0");
 
@@ -137,14 +128,7 @@ class LUNumber {
             result = sum(result, zeros + newNum);
         }
 
-        result = new StringBuilder(result).reverse().toString();
-
-        int excessZeros = 0;
-        while (result.charAt(excessZeros) == '0') {
-            excessZeros++;
-        }
-
-        return new LUNumber(result.substring(excessZeros));
+        return new LUNumber(cutZeros(result));
     }
 
 
@@ -168,7 +152,9 @@ class LUNumber {
 
 
 
-
+    private String reverse(String inputStr) {
+        return new StringBuilder(inputStr).reverse().toString();
+    }
 
     private int toInt(char digit) {
         return Integer.valueOf(String.valueOf(digit));
@@ -178,5 +164,4 @@ class LUNumber {
     public String toString() {
         return new StringBuilder(reversedNumber).reverse().toString();
     }
-
 }
