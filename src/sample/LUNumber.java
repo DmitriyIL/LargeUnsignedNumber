@@ -1,20 +1,42 @@
 package sample;
 
-import static java.lang.Math.*;
+import java.util.ArrayList;
+import java.util.Collections;
 
-public final class LUNumber {
-    private final String reversedNum;
+import static java.lang.Double.POSITIVE_INFINITY;
 
+
+public final class LUNumber implements Comparable<LUNumber> {
+    private final ArrayList<Byte> reversedNum;
+
+    private ArrayList<Byte> zero() {
+        return new ArrayList<>(Collections.singletonList((byte) 0));
+    }
 
     LUNumber(String numberInStr) {
         validation(numberInStr);
 
-        this.reversedNum = reverse(numberInStr);
+        reversedNum = new ArrayList<>(numberInStr.length());
+
+        char[] numInCharArray = numberInStr.toCharArray();
+        for (int i = numInCharArray.length - 1; i >= 0; i--) {
+            reversedNum.add((byte) (numInCharArray[i] - '0'));
+        }
     }
 
 
     LUNumber(int number) {
         this(String.valueOf(number));
+    }
+
+
+    LUNumber(ArrayList<Byte> number) {
+        reversedNum = number;
+    }
+
+
+    LUNumber(double infinity) {
+        reversedNum = null;
     }
 
 
@@ -28,200 +50,204 @@ public final class LUNumber {
     }
 
 
-    String compareTo(LUNumber other) {
-        return comparison(this.reversedNum, other.reversedNum);
-    }
-
-
-    private String comparison(String a, String b) {
-        if (a.length() > b.length()) return "more";
-        if (a.length() < b.length()) return "less";
-
-        for (int i = a.length() - 1; i >= 0; i--) {
-            if (a.charAt(i) > b.charAt(i)) return "more";
-            if (a.charAt(i) < b.charAt(i)) return "less";
-        }
-
-        return "equal";
-    }
-
-
     LUNumber add(LUNumber other) {
-        String sum = reverse(addition(this.reversedNum, other.reversedNum));
+        if (this.reversedNum == null || other.reversedNum == null) return new LUNumber(POSITIVE_INFINITY);
+
+        ArrayList<Byte> sum = addition(this.reversedNum, other.reversedNum);
         return new LUNumber(sum);
     }
 
 
-    private String addition(String a, String b) {
-        int lengthDifference = abs(a.length() - b.length());
-        String zeros = new String(new char[lengthDifference]).replace('\0', '0');
-        if (a.length() > b.length()) b += zeros;
-        else a += zeros;
+    private ArrayList<Byte> addition(ArrayList<Byte> a, ArrayList<Byte> b) {
+        if (a.size() > b.size()) b.addAll(zeros(a.size() - b.size()));
+        else a.addAll(zeros(b.size() - a.size()));
 
-        StringBuilder result = new StringBuilder("");
+        ArrayList<Byte> result = new ArrayList<>();
 
         int remainder = 0;
 
-        for (int i = 0; i < a.length(); i++) {
-            int digit1 = toInt(a.charAt(i));
-            int digit2 = toInt(b.charAt(i));
+        for (int i = 0; i < a.size(); i++) {
+            byte digit1 = a.get(i);
+            byte digit2 = b.get(i);
             int interimSum = digit1 + digit2 + remainder;
 
             int totalDigit = interimSum % 10;
             remainder = interimSum / 10;
 
-            result.append(String.valueOf(totalDigit));
+            result.add((byte) totalDigit);
         }
 
-        if (remainder != 0) result.append("1");
+        if (remainder != 0) result.add((byte) 1);
 
-        return result.toString();
+        return result;
+    }
+
+
+    private ArrayList<Byte> zeros(int amount) {
+        ArrayList<Byte> zeros = new ArrayList<>(amount);
+        for (int i = 1; i <= amount; i++) {
+            zeros.add((byte) 0);
+        }
+        return zeros;
     }
 
 
     LUNumber subtract(LUNumber other) {
-        return new LUNumber(reverse(subtraction(this.reversedNum, other.reversedNum)));
+        if (this.reversedNum == null && other.reversedNum != null)
+            return (new LUNumber(POSITIVE_INFINITY));
+        if (other.reversedNum == null)
+            throw new IllegalArgumentException("result is uncertain");
+
+        return new LUNumber(subtraction(this.reversedNum, other.reversedNum));
     }
 
 
-    private String subtraction(String a, String b) {
-        String comparison = comparison(a, b);
-        if ("equal".equals(comparison)) return "0";
-        if ("less".equals(comparison)) throw new IllegalArgumentException("result is negative");
+    private ArrayList<Byte> subtraction(ArrayList<Byte> a, ArrayList<Byte> b) {
+        int comparison = comparison(a, b);
+        if (comparison == 0) return zero();
+        if (comparison == -1) throw new IllegalArgumentException("result is negative");
+        if (isZero(b)) return a;
 
-        int lengthDifference = abs(a.length() - b.length());
-        String zeros = new String(new char[lengthDifference]).replace('\0', '0');
-        b += zeros;
+        b.addAll(zeros(a.size() - b.size()));
 
-        StringBuilder result = new StringBuilder("");
+        ArrayList<Byte> result = new ArrayList<>(a.size());
 
         int remainder = 0;
 
-        for (int i = 0; i < a.length(); i++) {
-            int digitsDifference = a.charAt(i) - b.charAt(i) - remainder;
+        for (int i = 0; i < a.size(); i++) {
+            int digitsDifference = a.get(i) - b.get(i) - remainder;
 
             int totalDigit = (digitsDifference < 0) ? digitsDifference + 10 : digitsDifference;
             remainder = (digitsDifference < 0) ? 1 : 0;
 
-            result.append(String.valueOf(totalDigit));
+            result.add((byte) totalDigit);
         }
 
-        return cutZeros(result.toString());
+        cutZeros(b);
+        return cutZeros(result);
     }
-    
 
-    private String cutZeros(String inputNum) {
-        if ("0".equals(inputNum)) return "0";
 
-        int excessZeros = 0;
-        while (inputNum.charAt(inputNum.length() - 1 - excessZeros) == '0') {
-            excessZeros++;
+    private ArrayList<Byte> cutZeros(ArrayList<Byte> inputNum) {
+        if (isZero(inputNum)) return zero();
+
+        while (inputNum.get(inputNum.size() - 1) == 0) {
+            inputNum.remove(inputNum.size() - 1);
         }
-        return inputNum.substring(0, inputNum.length() - excessZeros);
+
+        return inputNum;
     }
 
 
     LUNumber multiply(LUNumber other) {
-        return new LUNumber(reverse(multiplication(this.reversedNum, other.reversedNum)));
+        if (this.reversedNum == null && isZero(other.reversedNum))
+            throw new IllegalArgumentException("result is uncertain");
+        if (other.reversedNum == null && isZero(this.reversedNum))
+            throw new IllegalArgumentException("result is uncertain");
+        if (this.reversedNum == null || other.reversedNum == null)
+            return new LUNumber(POSITIVE_INFINITY);
+
+        return new LUNumber(multiplication(this.reversedNum, other.reversedNum));
     }
 
 
-    private String multiplication(String u, String v) {
-        if ("0".equals(u) || "0".equals(v)) return "0";
+    private ArrayList<Byte> multiplication(ArrayList<Byte> u, ArrayList<Byte> v) {
+        if (isZero(u) || isZero(v)) return zero();
 
-        String result = "0";
+        ArrayList<Byte> result = zero();
 
-        for (int i = 0; i < v.length(); i++) {
-            String newNum = multiplyByDigit(u, v.charAt(i));
-
-            String zeros = new String(new char[i]).replace('\0', '0');
-
-            result = addition(result, zeros + newNum);
+        for (int i = 0; i < v.size(); i++) {
+            ArrayList<Byte> newNum = zeros(i);
+            newNum.addAll(multiplyByDigit(u, v.get(i)));
+            result = addition(result, newNum);
         }
 
         return cutZeros(result);
     }
 
 
-    private String multiplyByDigit(String u, char digit) {
-        if (digit == '0') return "0";
-        if (digit == '1') return u;
+    private  ArrayList<Byte> multiplyByDigit( ArrayList<Byte> u, byte digit) {
+        if (digit == 0) return zero();
+        if (digit == 1) return u;
 
-        StringBuilder result = new StringBuilder("");
+        ArrayList<Byte> result = new ArrayList<>();
 
         int remainder = 0;
 
-        for (int i = 0; i < u.length(); i++) {
-            int composition = toInt(u.charAt(i)) * toInt(digit) + remainder;
-
+        for (int i = 0; i < u.size(); i++) {
+            int composition = u.get(i) * digit + remainder;
             remainder = composition / 10;
-
-            result.append(String.valueOf(composition % 10));
+            result.add((byte) (composition % 10));
         }
 
-        if (remainder != 0) result.append(String.valueOf(remainder));
+        if (remainder != 0) result.add((byte) remainder);
 
-        return result.toString();
+        return result;
     }
 
 
     LUNumber divide(LUNumber other) {
-        if ("less".equals(this.compareTo(other))) return new LUNumber("0");
+        if (this.reversedNum == null && isZero(other.reversedNum) ||
+            this.reversedNum == null && other.reversedNum == null ||
+            isZero(this.reversedNum) && isZero(other.reversedNum))
+                throw new IllegalArgumentException("result uncertain");
 
-        String result = division(this.reversedNum, other.reversedNum, true);
 
-        return (result.charAt(0) == '0') ? new LUNumber(result.substring(1)) : new LUNumber(result);
+        if (this.reversedNum == null) return new LUNumber(POSITIVE_INFINITY);
+        if (this.compareTo(other) == -1 ||
+            other.reversedNum == null && isZero(this.reversedNum))
+                return new LUNumber("0");
+        if (isZero(other.reversedNum)) return new LUNumber(POSITIVE_INFINITY);
+
+        ArrayList<Byte> result = division(this.reversedNum, other.reversedNum, true);
+
+        return new LUNumber(result);
     }
 
 
     LUNumber mod(LUNumber other) {
-        if ("less".equals(this.compareTo(other))) return this;
+        if (this.reversedNum == null || isZero(this.reversedNum) && isZero(other.reversedNum))
+            throw new IllegalArgumentException("result uncertain");
+
+        if (this.compareTo(other) == -1) return this;
+        if (isZero(other.reversedNum) ||
+            other.reversedNum == null && isZero(this.reversedNum))
+                return new LUNumber("0");
 
         return new LUNumber(division(this.reversedNum, other.reversedNum, false));
     }
 
 
-    private String division(String u, String v, boolean divFlag) {
-        if ("0".equals(v)) throw new ArithmeticException("You can not divide by zero");
+    private ArrayList<Byte> division(ArrayList<Byte> u, ArrayList<Byte> v, boolean divFlag) {
+        ArrayList<Byte> result = new ArrayList<>();
 
-        StringBuilder result = new StringBuilder();
+        ArrayList<Byte> remainder = new ArrayList<>(u.subList(u.size() - v.size(), u.size()));
 
-        String remainder = u.substring(u.length() - v.length());
+        for (int i = u.size() - v.size(); i >= 0; i--) {
+            byte totalDigit = 9;
+            ArrayList<Byte> tempNum = multiplyByDigit(v, totalDigit);
 
-        for (int i = u.length() - v.length(); i >= 0; i--) {
-            int totalDigit = 9;
-            String tempNum = multiplyByDigit(v, toChar(totalDigit));
-
-            while ("less".equals(comparison(remainder, tempNum))) {
+            while (comparison(remainder, tempNum) == -1) {
                 tempNum = subtraction(tempNum, v);
                 totalDigit--;
             }
 
             remainder = subtraction(remainder, tempNum);
             if (i != 0) {
-                remainder = u.charAt(i - 1) + remainder;
+                remainder.add(0, u.get(i - 1));
             }
-            if (remainder.length() > 1 && remainder.charAt(remainder.length() - 1) == '0') {
-                remainder = remainder.substring(0, remainder.length() - 1);
+            if (remainder.size() > 1 && remainder.get(remainder.size() - 1) == 0) {
+                remainder.remove(remainder.size() - 1);
             }
 
-            result.append(toChar(totalDigit));
+            result.add(0, totalDigit);
         }
 
-        return (divFlag) ? result.toString() : reverse(remainder);
+        return (divFlag) ? cutZeros(result) : remainder;
     }
 
-
-    private String reverse(String inputStr) {
-        return new StringBuilder(inputStr).reverse().toString();
-    }
-
-    private char toChar(int digit) {
-        return Character.forDigit(digit, 10);
-    }
-
-    private int toInt(char digit) {
-        return digit - '0';
+    private boolean isZero(ArrayList<Byte> number) {
+        return comparison(number, zero()) == 0;
     }
 
     @Override
@@ -229,19 +255,40 @@ public final class LUNumber {
         return super.hashCode();
     }
 
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj instanceof LUNumber) {
-            LUNumber other = (LUNumber) obj;
-            if ("equal".equals(this.compareTo(other))) return true;
-        }
-        return false;
-    }
-
     @Override
     public String toString() {
-        return reverse(reversedNum);
+        if (this.reversedNum == null) return "+inf";
+
+        StringBuilder strForOutput = new StringBuilder("");
+
+        for (int i = reversedNum.size() - 1; i >= 0; i--) {
+            strForOutput.append(reversedNum.get(i));
+        }
+
+        return strForOutput.toString();
+    }
+
+    public static void main(String[] args) {
+        System.out.println(0 % 10);
+    }
+    @Override
+    public int compareTo(LUNumber other) {
+        return comparison(this.reversedNum, other.reversedNum);
+    }
+
+    private int comparison(ArrayList<Byte> a, ArrayList<Byte> b) {
+        if (a == null && b == null) return 0;
+        if (a == null) return 1;
+        if (b == null) return -1;
+
+        if (a.size() > b.size()) return 1;
+        if (a.size() < b.size()) return -1;
+
+        for (int i = a.size() - 1; i >= 0; i--) {
+            if (a.get(i) > b.get(i)) return 1;
+            if (a.get(i) < b.get(i)) return -1;
+        }
+
+        return 0;
     }
 }

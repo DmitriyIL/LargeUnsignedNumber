@@ -2,7 +2,9 @@ package sample;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
-///ghj
+
+import static java.lang.Double.POSITIVE_INFINITY;
+
 class LUNumberTest {
     @Test
     void LargeUnsignedNumber() {
@@ -10,28 +12,37 @@ class LUNumberTest {
         assertThrows(IllegalArgumentException.class, () -> new LUNumber(""));
         assertThrows(IllegalArgumentException.class, () -> new LUNumber("12345678-9"));
 
+        assertEquals("+inf", new LUNumber(POSITIVE_INFINITY).toString());
+        assertEquals("111222", new LUNumber(111222).toString());
         assertEquals("12345678901234567890", new LUNumber("12345678901234567890").toString());
     }
 
     @Test
     void compareTo() {
-        assertEquals("more",
+        assertEquals(1,
                 new LUNumber("123456789123456789").compareTo(new LUNumber("123456789")));
-        assertEquals("more",
+        assertEquals(1,
                 new LUNumber("2222222222222").compareTo(new LUNumber("2222222222221")));
-        assertEquals("less",
+        assertEquals(-1,
                 new LUNumber("123456789").compareTo(new LUNumber("123456789123456789")));
-        assertEquals("less",
+        assertEquals(-1,
                 new LUNumber("2222222222221").compareTo(new LUNumber("2222222222222")));
-        assertEquals("equal",
+        assertEquals(0,
                 new LUNumber("123456789123456789").compareTo(new LUNumber("123456789123456789")));
-        assertEquals("more",
+        assertEquals(1,
                 new LUNumber("20123456789").compareTo(new LUNumber("10123456789")));
+
+        assertEquals(1,
+                new LUNumber(POSITIVE_INFINITY).compareTo(new LUNumber("10123456789")));
+        assertEquals(0,
+                new LUNumber(POSITIVE_INFINITY).compareTo(new LUNumber(POSITIVE_INFINITY)));
+        assertEquals(-1,
+                new LUNumber("20123456789").compareTo(new LUNumber(POSITIVE_INFINITY)));
 
         int limit = 1000;
         for (int i = 0; i <= limit; i++) {
             for (int j = 0; j <= limit; j++) {
-                String comparison = (i - j < 0) ? "less" : (i - j > 0) ? "more" : "equal";
+                int comparison = Integer.compare(i - j, 0);
                 assertEquals(comparison,
                         new LUNumber(String.valueOf(i))
                                 .compareTo(new LUNumber(String.valueOf(j))));
@@ -52,6 +63,13 @@ class LUNumberTest {
         assertEquals("1999999998",
                 new LUNumber("999999999").add(new LUNumber("999999999")).toString());
 
+        assertEquals("+inf",
+                new LUNumber(POSITIVE_INFINITY).add(new LUNumber("999999999")).toString());
+        assertEquals("+inf",
+                new LUNumber("999999999").add(new LUNumber(POSITIVE_INFINITY)).toString());
+        assertEquals("+inf",
+                new LUNumber(POSITIVE_INFINITY).add(new LUNumber(POSITIVE_INFINITY)).toString());
+
         int limit = 1000;
         for (int i = 0; i <= limit; i++) {
             for (int j = 0; j <= limit; j++) {
@@ -69,6 +87,14 @@ class LUNumberTest {
 
         assertThrows(IllegalArgumentException.class,
                 () -> new LUNumber("123").subtract(new LUNumber("1234")));
+        assertThrows(IllegalArgumentException.class,
+                () -> new LUNumber("123").subtract(new LUNumber(POSITIVE_INFINITY)));
+        assertThrows(IllegalArgumentException.class,
+                () -> new LUNumber(POSITIVE_INFINITY).subtract(new LUNumber(POSITIVE_INFINITY)));
+
+        assertEquals("+inf",
+                new LUNumber(POSITIVE_INFINITY).subtract(new LUNumber("1234567890")).toString());
+
 
         int limit = 1000;
         for (int i = 0; i <= limit; i++) {
@@ -91,6 +117,19 @@ class LUNumberTest {
                 new LUNumber("1234567890")
                         .multiply(new LUNumber("0")).toString());
 
+        assertThrows(IllegalArgumentException.class,
+                () -> new LUNumber(POSITIVE_INFINITY).multiply(new LUNumber("0")));
+        assertThrows(IllegalArgumentException.class,
+                () -> new LUNumber("0").multiply(new LUNumber(POSITIVE_INFINITY)));
+
+        assertEquals("+inf",
+                new LUNumber(POSITIVE_INFINITY).multiply(new LUNumber("999999999")).toString());
+        assertEquals("+inf",
+                new LUNumber("999999999").multiply(new LUNumber(POSITIVE_INFINITY)).toString());
+        assertEquals("+inf",
+                new LUNumber(POSITIVE_INFINITY).multiply(new LUNumber(POSITIVE_INFINITY)).toString());
+
+
         int limit = 1000;
         for (int i = 0; i <= limit; i++) {
             for (int j = 0; j <= limit; j++) {
@@ -103,15 +142,33 @@ class LUNumberTest {
 
     @Test
     void divide() {
+        assertEquals("823",
+                new LUNumber("12345").divide(new LUNumber("15")).toString());
         assertEquals("987654321",
-                new LUNumber("1219326311126352690")
-                        .divide(new LUNumber("1234567890")).toString());
+                new LUNumber("1219326311126352690").divide(new LUNumber("1234567890")).toString());
         assertEquals("82304526",
-                new LUNumber("1234567890")
-                        .divide(new LUNumber("15")).toString());
+                new LUNumber("1234567890").divide(new LUNumber("15")).toString());
         assertEquals("0",
-                new LUNumber("12")
-                        .divide(new LUNumber("1234")).toString());
+                new LUNumber("12").divide(new LUNumber("1234")).toString());
+        assertEquals("0",
+                new LUNumber("0").divide(new LUNumber("1234")).toString());
+
+        assertEquals("+inf",
+                new LUNumber(POSITIVE_INFINITY).divide(new LUNumber("1234")).toString());
+        assertEquals("0",
+                new LUNumber("1234").divide(new LUNumber(POSITIVE_INFINITY)).toString());
+        assertEquals("0",
+                new LUNumber("0").divide(new LUNumber(POSITIVE_INFINITY)).toString());
+        assertEquals("+inf",
+                new LUNumber("1234").divide(new LUNumber("0")).toString());
+
+        assertThrows(IllegalArgumentException.class,
+                () -> new LUNumber(POSITIVE_INFINITY).divide(new LUNumber("0")));
+        assertThrows(IllegalArgumentException.class,
+                () -> new LUNumber(POSITIVE_INFINITY).divide(new LUNumber(POSITIVE_INFINITY)));
+        assertThrows(IllegalArgumentException.class,
+                () -> new LUNumber("0").divide(new LUNumber("0")));
+
 
         int limit = 1000;
         for (int i = 0; i <= limit; i++) {
@@ -126,14 +183,27 @@ class LUNumberTest {
     @Test
     void mod() {
         assertEquals("9",
-                new LUNumber(String.valueOf("1627384950"))
-                        .mod(new LUNumber(String.valueOf("39"))).toString());
+                new LUNumber(String.valueOf("1627384950")).mod(new LUNumber(String.valueOf("39"))).toString());
         assertEquals("0",
-                new LUNumber(String.valueOf("1627384950"))
-                        .mod(new LUNumber(String.valueOf("1"))).toString());
+                new LUNumber(String.valueOf("1627384950")).mod(new LUNumber(String.valueOf("1"))).toString());
         assertEquals("16273",
-                new LUNumber(String.valueOf("16273"))
-                        .mod(new LUNumber(String.valueOf("162738495"))).toString());
+                new LUNumber(String.valueOf("16273")).mod(new LUNumber(String.valueOf("162738495"))).toString());
+
+        assertEquals("16273",
+                new LUNumber(String.valueOf("16273")).mod(new LUNumber(POSITIVE_INFINITY)).toString());
+        assertEquals("0",
+                new LUNumber(String.valueOf("16273")).mod(new LUNumber(String.valueOf("0"))).toString());
+        assertEquals("0",
+                new LUNumber(String.valueOf("0")).mod(new LUNumber(POSITIVE_INFINITY)).toString());
+
+        assertThrows(IllegalArgumentException.class,
+                () -> new LUNumber(POSITIVE_INFINITY).mod(new LUNumber("1234")));
+        assertThrows(IllegalArgumentException.class,
+                () -> new LUNumber(POSITIVE_INFINITY).mod(new LUNumber("0")));
+        assertThrows(IllegalArgumentException.class,
+                () -> new LUNumber(POSITIVE_INFINITY).mod(new LUNumber(POSITIVE_INFINITY)));
+        assertThrows(IllegalArgumentException.class,
+                () -> new LUNumber("0").mod(new LUNumber("0")));
 
         int limit = 1000;
         for (int i = 0; i <= limit; i++) {
